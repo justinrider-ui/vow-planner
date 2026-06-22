@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vow Renewal Planner · Nov 15, 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --burgundy: #6B2D3E;
+    --burgundy-light: #8B3D52;
+    --gold: #B8960C;
+    --gold-light: #F5E9B8;
+    --cream: #FDF8F2;
+    --surface: #FFFFFF;
+    --border: #E8E0D8;
+    --border-strong: #C8B8A8;
+    --text: #1A1410;
+    --text-muted: #7A6A5A;
+    --text-light: #A89880;
+    --green: #2D6B3E;
+    --green-bg: #EBF5EE;
+    --red: #8B2020;
+    --red-bg: #FAEAEA;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Georgia', serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* AUTH SCREEN */
+  #auth-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 3rem 2.5rem;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .auth-card .heart {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    display: block;
+  }
+
+  .auth-card h1 {
+    font-size: 1.6rem;
+    font-weight: normal;
+    color: var(--burgundy);
+    margin-bottom: 0.5rem;
+  }
+
+  .auth-card p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-family: 'Arial', sans-serif;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+  }
+
+  .auth-card input[type=email] {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: 'Arial', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .auth-card input[type=email]:focus {
+    outline: none;
+    border-color: var(--burgundy);
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: var(--burgundy);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: 'Arial', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s;
+    letter-spacing: 0.02em;
+  }
+
+  .btn-primary:hover { background: var(--burgundy-light); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .auth-msg {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    font-family: 'Arial', sans-serif;
+    padding: 10px;
+    border-radius: 6px;
+    display: none;
+  }
+
+  .auth-msg.success { background: var(--green-bg); color: var(--green); display: block; }
+  .auth-msg.error { background: var(--red-bg); color: var(--red); display: block; }
+
+  /* APP SHELL */
+  #app { display: none; min-height: 100vh; }
+
+  .topbar {
+    background: var(--burgundy);
+    color: white;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-title {
+    font-size: 1rem;
+    font-weight: normal;
+    letter-spacing: 0.04em;
+    flex: 1;
+  }
+
+  .topbar-title span {
+    font-family: 'Arial', sans-serif;
+    font-size: 0.75rem;
+    opacity: 0.7;
+    margin-left: 8px;
+  }
+
+  .topbar-user {
+    font-family: 'Arial', sans-serif;
+    font-size: 0.8rem;
+    opacity: 0.8;
+  }
+
+  .topbar-signout {
+    font-family: 'Arial', sans-serif;
+    font-size: 0.8rem;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .topbar-signout:hover { background: rgba(255,255,255,0.25); }
+
+  .sync-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #4CAF50;
+    transition: background 0.3s;
+  }
+
+  .sync-dot.saving { background: var(--gold); animation: pulse 0.8s infinite; }
+  .sync-dot.error { background: var(--red); }
+
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .main-layout {
+    display: flex;
+    min-height: calc(100vh - 56px);
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 1.5rem 0;
+    flex-shrink: 0;
+  }
+
+  .sidebar-section {
+    padding: 0 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .sidebar-label {
+    font-family: 'Arial', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-light);
+    padding: 0 0.5rem;
+    margin-bottom: 4px;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Arial', sans-serif;
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+  }
+
+  .sidebar-item:hover { background: var(--cream); color: var(--text); }
+  .sidebar-item.active { background: var(--gold-light); color: var(--burgundy); font-weight: 500; }
+
+  .sidebar-item .icon { font-size: 1rem; width: 18px; text-align: center; }
+
+  .sidebar-divider { height: 1px; background: var(--border); margin: 0.75rem 1rem; }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-item {
+    flex: 1;
+    background: var(--surface);
+    padding: 14px 20px;
+    text-align: center;
+  }
+
+  .stat-val {
+    font-size: 1.4rem;
+    color: var(--burgundy);
+  }
+
+  .stat-lbl {
+    font-family: 'Arial', sans-serif;
+    font-size: 0.72rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+
+  /* CONTENT */
+  .content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    max-width: 820px;
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .panel-title {
+    font-size: 1.4rem;
+    color: var(--burgundy);
+    font-weight: normal;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .card h3 {
+    font-size: 0.95rem;
+    font-weight: normal;
+    font-family: 'Arial', sans-serif;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .field { margin-bottom: 1rem; }
+  .field:last-child { margin-bottom: 0; }
+
+  label.field-label {
+    display: block;
+    font-family: 'Arial', sans-serif;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  input[type=text], input[type=email], input[type=number], textarea, select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 7px;
+    font-family: 'Arial', sans-serif;
+    font-size: 0.9rem;
+    color: var(--text);
+    background: var(--cream);
+    transition: border-color 0.2s;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--burgundy);
+    background: white;
+  }
+
+  textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+  /* BUDGET */
+  .budget-header {
+    display: grid;
+    grid-template-columns: 1fr 110px 110px 90px;
+    gap: 8px;
+    padding: 0 0 8px;
+    font-family: 'Arial', sans-serif;
+    font-size: 0.75rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+
+  .budget-row {
+    display: grid;
+    grid-template-columns: 1fr 110px 110px 90px;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .budget-row:last-child { border-bottom: none; }
+
+  .budget-row input {
+    padding: 6px 10px;
+    font-size: 0.88rem;
+    text-align: right;
+  }
+
+  .budget-row .cat-name {
+    font-family: 'Arial', sans-serif;
+    font-size: 0.9rem;
+    padding: 6px 4px;
+  }
+
+  .budget-row .variance {
+    font-family: 'Arial', sans-serif;
+    font-size: 0.85rem;
+    text-align: right;
+    padding: 6px 4px;
+  }
+
+  .variance.ok { color: var(--green); }
+  .variance.over { color: var(--red); }
+
+  .budget-total {
+    display: grid;
+    grid-template-columns: 1fr 110px 110px 90px;
+    gap: 8px;
+    padding: 12px 0 0;
+    border-top: 2px solid var(--border-strong);
+    margin-top: 8px;
+    font-family: 'Arial', sans-serif;
+    font-weight: 600;
+  }
+
+  .progress-wrap { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 1rem 0 0.5rem; }
+  .progress-bar { height: 100%; background: var(--burgundy); border-radius: 3px; transition: width 0.4s; }
+  .progress-bar.over { background: var(--red); }
+  .progress-label { font-family: 'Arial', sans-serif; font-size: 0.8rem; color: var(--text-muted); }
+
+  /* CHECKLIST */
+  .phase-block { margin-bottom: 1.5rem; }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 0.75rem;
+  }
+
+  .phase-title {
+    font-family: 'Arial', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .phase-date {
+    font-family: 'Arial', sans-serif;
+    font-size: 0.78rem;
+    color: var(--text-light);
+    margin-left: auto;
+  }
+
+  .badge {
+    font-family: 'Arial', sans-serif;
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .badge.now { background: #FEF3CD; color: #7B5E0A; }
+  .badge.soon { background: #EBF5EE; color: var(--green); }
+  .badge.later { background: var(--cream); color: var(--text-light); border: 1px solid var(--border); }
+
+  .check-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: 7px;
+    transition: background 0.15s;
+  }
+
+  .check-row:hover { background: var(--cream); }
+
+  .check-row input[type=checkbox] {
+    width: 17px; height: 17px;
+    margin-top: 2px;
+    accent-color: var(--burgundy);
+    flex-shrink: 0;
+    cursor: pointer;
+    padding: 0;
+    border: none;
+  }
+
+  .check-row label {
+    font-family: 'Arial', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  .check-row label.done {
+    text-decoration: line-through;
+    color: var(--text-light);
+  }
+
+  .overall-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .overall-progress .pct {
+    font-size: 1.6rem;
+    color: var(--burgundy);
+    min-width: 54px;
+  }
+
+  .overall-progress .wrap { flex: 1; }
+  .overall-progress .lbl { font-family: 'Arial', sans-serif; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 6px; }
+
+  /* SCHEDULE */
+  .sched-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 36px;
+    gap: 8px;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sched-row:last-child { border-bottom: none; }
+
+  .sched-row input { padding: 7px 10px; font-size: 0.88rem; }
+
+  .btn-ghost {
+    background: none;
+    border: 1px solid var(--border-strong);
+    border-radius: 7px;
+    padding: 6px 14px;
+    font-family: 'Arial', sans-serif;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 10px;
+  }
+
+  .btn-ghost:hover { border-color: var(--burgundy); color: var(--burgundy); }
+
+  .btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-light);
+    font-size: 1rem;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.15s;
+    line-height: 1;
+  }
+
+  .btn-icon:hover { color: var(--red); }
+
+  /* CEREMONY */
+  .ceremony-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 36px;
+    gap: 8px;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ceremony-row:last-child { border-bottom: none; }
+  .ceremony-row .step-num { font-family: 'Arial', sans-serif; font-size: 0.82rem; color: var(--text-light); text-align: center; }
+  .ceremony-row input { padding: 7px 10px; font-size: 0.88rem; }
+
+  /* VOWS */
+  .vows-section textarea { min-height: 200px; font-family: Georgia, serif; font-size: 1rem; line-height: 1.8; }
+
+  .vendor-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 110px 36px;
+    gap: 8px;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .vendor-row:last-child { border-bottom: none; }
+  .vendor-row input { padding: 7px 10px; font-size: 0.88rem; }
+
+  .vendor-status {
+    padding: 5px 8px;
+    font-size: 0.82rem;
+  }
+
+  /* TOAST */
+  #toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: var(--text);
+    color: white;
+    font-family: 'Arial', sans-serif;
+    font-size: 0.85rem;
+    padding: 10px 18px;
+    border-radius: 8px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.25s;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  #toast.show { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 680px) {
+    .sidebar { display: none; }
+    .stats-bar { flex-wrap: wrap; }
+    .grid2, .grid3 { grid-template-columns: 1fr; }
+    .budget-header, .budget-row, .budget-total { grid-template-columns: 1fr 90px 90px; }
+    .budget-header > :last-child, .budget-row > :last-child, .budget-total > :last-child { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <span class="heart">♥</span>
+    <h1>Vow Renewal Planner</h1>
+    <p>November 15, 2026 · Moultonborough, NH<br>Enter your email and we'll send you a magic link.</p>
+    <input type="email" id="auth-email" placeholder="your@email.com" />
+    <button class="btn-primary" id="auth-btn" onclick="sendMagicLink()">Send magic link</button>
+    <div class="auth-msg" id="auth-msg"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-title">Vow Renewal <span>Nov 15, 2026</span></div>
+    <div class="sync-dot" id="sync-dot" title="Synced"></div>
+    <div class="topbar-user" id="topbar-user"></div>
+    <button class="topbar-signout" onclick="signOut()">Sign out</button>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-val" id="stat-days">—</div>
+      <div class="stat-lbl">days away</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" id="stat-remaining">—</div>
+      <div class="stat-lbl">budget left</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" id="stat-progress">—</div>
+      <div class="stat-lbl">tasks done</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" id="stat-guests">30</div>
+      <div class="stat-lbl">guests</div>
+    </div>
+  </div>
+
+  <div class="main-layout">
+    <nav class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Planning</div>
+        <button class="sidebar-item active" onclick="showTab('overview', this)"><span class="icon">⌂</span> Overview</button>
+        <button class="sidebar-item" onclick="showTab('budget', this)"><span class="icon">$</span> Budget</button>
+        <button class="sidebar-item" onclick="showTab('checklist', this)"><span class="icon">✓</span> Checklist</button>
+        <button class="sidebar-item" onclick="showTab('vendors', this)"><span class="icon">☎</span> Vendors</button>
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">The Day</div>
+        <button class="sidebar-item" onclick="showTab('ceremony', this)"><span class="icon">♡</span> Ceremony</button>
+        <button class="sidebar-item" onclick="showTab('schedule', this)"><span class="icon">◷</span> Schedule</button>
+        <button class="sidebar-item" onclick="showTab('vows', this)"><span class="icon">✎</span> Vows</button>
+      </div>
+    </nav>
+
+    <div class="content">
+
+      <!-- OVERVIEW -->
+      <div class="tab-panel active" id="panel-overview">
+        <div class="panel-title">Overview</div>
+        <div class="card">
+          <h3>Event details</h3>
+          <div class="grid2">
+            <div class="field">
+              <label class="field-label">Your names</label>
+              <input type="text" id="f-names" placeholder="e.g. Sarah & James" oninput="fieldChange('names', this.value)">
+            </div>
+            <div class="field">
+              <label class="field-label">Guest count</label>
+              <input type="number" id="f-guests" value="30" oninput="fieldChange('guests', this.value); document.getElementById('stat-guests').textContent = this.value;">
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label class="field-label">Venue / address</label>
+              <input type="text" id="f-venue" value="Our home — Moultonborough, NH" oninput="fieldChange('venue', this.value)">
+            </div>
+            <div class="field">
+              <label class="field-label">Ceremony time</label>
+              <input type="text" id="f-time" value="4:00 PM" oninput="fieldChange('ceremony_time', this.value)">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Officiant</label>
+            <input type="text" id="f-officiant" placeholder="Name — friend getting ordained, or hired officiant" oninput="fieldChange('officiant', this.value)">
+          </div>
+          <div class="field">
+            <label class="field-label">Notes</label>
+            <textarea id="f-notes" placeholder="Anything else to track at a high level..." oninput="fieldChange('overview_notes', this.value)" style="min-height:80px"></textarea>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Atmosphere & décor</h3>
+          <div class="grid2">
+            <div class="field">
+              <label class="field-label">Color palette</label>
+              <input type="text" id="f-colors" value="Burgundy, gold, deep green" oninput="fieldChange('colors', this.value)">
+            </div>
+            <div class="field">
+              <label class="field-label">Vibe / feel</label>
+              <input type="text" id="f-vibe" value="Elegant-warm, intimate, celebratory" oninput="fieldChange('vibe', this.value)">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Décor notes</label>
+            <textarea id="f-decor" placeholder="Tent setup, lighting, flowers, bonfire plan..." oninput="fieldChange('decor', this.value)" style="min-height:80px"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- BUDGET -->
+      <div class="tab-panel" id="panel-budget">
+        <div class="panel-title">Budget</div>
+        <div class="card">
+          <h3>Total budget</h3>
+          <div class="grid3">
+            <div class="field">
+              <label class="field-label">Total budget ($)</label>
+              <input type="number" id="f-total-budget" value="10000" oninput="fieldChange('total_budget', this.value); renderBudget();">
+            </div>
+            <div class="field">
+              <label class="field-label">Total allocated</label>
+              <div style="font-size:1.3rem; color:var(--burgundy); padding-top:8px;" id="total-alloc-display">$10,000</div>
+            </div>
+            <div class="field">
+              <label class="field-label">Total spent</label>
+              <div style="font-size:1.3rem; color:var(--text); padding-top:8px;" id="total-spent-display">$0</div>
+            </div>
+          </div>
+          <div class="progress-wrap"><div class="progress-bar" id="budget-bar" style="width:0%"></div></div>
+          <div class="progress-label" id="budget-label">0% of budget spent</div>
+        </div>
+        <div class="card">
+          <h3>Line items</h3>
+          <div class="budget-header"><span>Category</span><span style="text-align:right">Budgeted</span><span style="text-align:right">Spent</span><span style="text-align:right">Left</span></div>
+          <div id="budget-rows"></div>
+          <div class="budget-total" id="budget-total">
+            <span>Total</span><span id="bt-alloc" style="text-align:right">$10,000</span><span id="bt-spent" style="text-align:right">$0</span><span id="bt-left" style="text-align:right">$10,000</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHECKLIST -->
+      <div class="tab-panel" id="panel-checklist">
+        <div class="panel-title">Checklist</div>
+        <div class="overall-progress">
+          <div class="pct" id="cl-pct">0%</div>
+          <div class="wrap">
+            <div class="lbl" id="cl-lbl">0 of 0 tasks complete</div>
+            <div class="progress-wrap" style="margin:0"><div class="progress-bar" id="cl-bar" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div id="checklist-body"></div>
+      </div>
+
+      <!-- VENDORS -->
+      <div class="tab-panel" id="panel-vendors">
+        <div class="panel-title">Vendors</div>
+        <div class="card">
+          <h3>Contacts & bookings</h3>
+          <div class="budget-header" style="grid-template-columns:1fr 1fr 110px 36px"><span>Vendor / name</span><span>Contact / notes</span><span>Status</span><span></span></div>
+          <div id="vendor-rows"></div>
+          <button class="btn-ghost" onclick="addVendorRow()">+ Add vendor</button>
+        </div>
+      </div>
+
+      <!-- CEREMONY -->
+      <div class="tab-panel" id="panel-ceremony">
+        <div class="panel-title">Ceremony</div>
+        <div class="card">
+          <h3>Kids' roles</h3>
+          <div class="grid2">
+            <div class="field">
+              <label class="field-label">Kids' names</label>
+              <input type="text" id="f-kids-names" placeholder="e.g. Emma, Liam" oninput="fieldChange('kids_names', this.value)">
+            </div>
+            <div class="field">
+              <label class="field-label">Their role</label>
+              <input type="text" id="f-kids-role" placeholder="e.g. flower girl, ring bearer" oninput="fieldChange('kids_role', this.value)">
+            </div>
+          </div>
+          <div class="field">
+            <label class="field-label">Details</label>
+            <textarea id="f-kids-detail" placeholder="How they're involved, what they say or do..." oninput="fieldChange('kids_detail', this.value)" style="min-height:80px"></textarea>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Ceremony order</h3>
+          <div id="ceremony-rows"></div>
+          <button class="btn-ghost" onclick="addCeremonyRow()">+ Add step</button>
+        </div>
+        <div class="card">
+          <h3>Music</h3>
+          <div class="grid2">
+            <div class="field"><label class="field-label">Processional</label><input type="text" id="f-s1" placeholder="Walk-in song" oninput="fieldChange('song_processional', this.value)"></div>
+            <div class="field"><label class="field-label">Ceremony background</label><input type="text" id="f-s2" placeholder="During the ceremony" oninput="fieldChange('song_ceremony', this.value)"></div>
+            <div class="field"><label class="field-label">Recessional</label><input type="text" id="f-s3" placeholder="Walk-out song" oninput="fieldChange('song_recessional', this.value)"></div>
+            <div class="field"><label class="field-label">First dance</label><input type="text" id="f-s4" placeholder="Your first dance" oninput="fieldChange('song_firstdance', this.value)"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCHEDULE -->
+      <div class="tab-panel" id="panel-schedule">
+        <div class="panel-title">Day-of schedule</div>
+        <div class="card">
+          <h3>Timeline</h3>
+          <div id="schedule-rows"></div>
+          <button class="btn-ghost" onclick="addScheduleRow()">+ Add event</button>
+        </div>
+      </div>
+
+      <!-- VOWS -->
+      <div class="tab-panel vows-section" id="panel-vows">
+        <div class="panel-title">Vows</div>
+        <div class="card">
+          <h3>Your vows</h3>
+          <textarea id="f-vows1" placeholder="Write from the heart. Think about your 13 years — what you've built, what you've learned, and what you promise going forward." oninput="fieldChange('vows_1', this.value)"></textarea>
+        </div>
+        <div class="card">
+          <h3>Partner's vows</h3>
+          <textarea id="f-vows2" placeholder="Space for your partner to write their vows..." oninput="fieldChange('vows_2', this.value)"></textarea>
+        </div>
+        <div class="card">
+          <h3>Notes & inspiration</h3>
+          <textarea id="f-vow-notes" placeholder="Memories, moments, things you want to say, lines you love..." oninput="fieldChange('vow_notes', this.value)"></textarea>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://xgzwgyoyimlycctckqfh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnendneW95aW1seWNjdGNrcWZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NjI4NDUsImV4cCI6MjA5NTUzODg0NX0.6PJxApO2-W0C6mHswGZmS8QRaLhX4HXd9WHi-CoFiT8';
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let saveTimer = null;
+let state = {};
+let currentUser = null;
+
+const DEFAULTS = {
+  names: '', guests: 30, venue: 'Our home — Moultonborough, NH',
+  ceremony_time: '4:00 PM', officiant: '', overview_notes: '',
+  colors: 'Burgundy, gold, deep green', vibe: 'Elegant-warm, intimate, celebratory', decor: '',
+  total_budget: 10000,
+  budget: [
+    {cat:'Catering & food', budget:4000, spent:0},
+    {cat:'Photography', budget:2000, spent:0},
+    {cat:'Tent & rentals', budget:1500, spent:0},
+    {cat:'Bar & drinks', budget:700, spent:0},
+    {cat:'Flowers & décor', budget:800, spent:0},
+    {cat:'Officiant', budget:300, spent:0},
+    {cat:'Music', budget:300, spent:0},
+    {cat:'Invitations & stationery', budget:150, spent:0},
+    {cat:'Cake / dessert', budget:150, spent:0},
+    {cat:'Buffer / misc', budget:100, spent:0}
+  ],
+  checked: {},
+  schedule: [
+    {time:'12:00 PM', event:'Tent & setup crew finishes — décor goes up'},
+    {time:'2:00 PM', event:'Get ready'},
+    {time:'3:30 PM', event:'Guests arrive — welcome drinks outside'},
+    {time:'4:00 PM', event:'Ceremony begins (outdoors, ~20 min)'},
+    {time:'4:30 PM', event:'Move to heated tent — cocktail hour'},
+    {time:'5:30 PM', event:'Dinner served'},
+    {time:'7:00 PM', event:'Toasts, cake, dancing / bonfire'},
+    {time:'9:00 PM', event:'Wind down, guests depart'}
+  ],
+  ceremony: [
+    'Guests are seated, soft music playing',
+    'Kids walk in (flower role / ring bearer)',
+    'You walk in together or separately',
+    'Officiant welcomes everyone (2–3 min)',
+    'Readings or reflection on 13 years',
+    'Exchange of vows',
+    'Ring exchange',
+    'Unity moment (candle, sand, or family gesture)',
+    'Declaration & kiss',
+    'Introduce your family — walk back out together'
+  ],
+  vendors: [
+    {name:'Lakes Region Tent & Event', contact:'lakesregiontent.com', status:'Not contacted'},
+    {name:'Caterer', contact:'', status:'Not contacted'},
+    {name:'Photographer', contact:'', status:'Not contacted'},
+    {name:'Officiant', contact:'', status:'Not contacted'}
+  ],
+  kids_names: '', kids_role: '', kids_detail: '',
+  song_processional: '', song_ceremony: '', song_recessional: '', song_firstdance: '',
+  vows_1: '', vows_2: '', vow_notes: ''
+};
+
+const CHECKLIST_PHASES = [
+  {phase:'Now – July 2026', badge:'now', items:[
+    'Discuss vision together and align on priorities',
+    'Finalize guest list (~30 people)',
+    'Decide: full tent reception or move inside after ceremony?',
+    'Identify officiant — ask a friend or hire locally'
+  ]},
+  {phase:'July – August 2026', badge:'soon', items:[
+    'Get 2–3 tent rental quotes and book',
+    'Get 2–3 catering quotes and book',
+    'Book photographer (good ones fill up fast)',
+    'Confirm officiant and confirm they\'re preparing',
+    'Reserve propane heaters'
+  ]},
+  {phase:'September – October 2026', badge:'later', items:[
+    'Write your vows',
+    'Plan the kids\' roles in the ceremony',
+    'Order or arrange flowers and décor',
+    'Choose attire (allow time for alterations)',
+    'Build ceremony + reception playlists',
+    'Send invitations (early October, 6–8 weeks out)',
+    'Consider ring upgrade or engraving'
+  ]},
+  {phase:'October – Early November 2026', badge:'later', items:[
+    'Confirm all vendors with final headcount',
+    'Finalize day-of timeline',
+    'Coordinate tent delivery (1–2 days before)',
+    'Arrange accommodation for out-of-town guests',
+    'Plan anniversary night or getaway',
+    'Rehearse ceremony once with the kids'
+  ]}
+];
+
+// ── AUTH ──────────────────────────────────────────────────────────
+
+async function sendMagicLink() {
+  const email = document.getElementById('auth-email').value.trim();
+  if (!email) return;
+  const btn = document.getElementById('auth-btn');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } });
+  const msg = document.getElementById('auth-msg');
+  if (error) {
+    msg.className = 'auth-msg error';
+    msg.textContent = error.message;
+    btn.disabled = false;
+    btn.textContent = 'Send magic link';
+  } else {
+    msg.className = 'auth-msg success';
+    msg.textContent = 'Check your email — click the link to sign in. You can close this tab.';
+    btn.textContent = 'Sent ✓';
+  }
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  location.reload();
+}
+
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (session?.user) {
+    currentUser = session.user;
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('topbar-user').textContent = session.user.email;
+    await loadData();
+    updateStats();
+    renderAll();
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+  }
+});
+
+// ── DATA ──────────────────────────────────────────────────────────
+
+async function loadData() {
+  const { data, error } = await sb.from('vow_planner').select('data').eq('id', 1).single();
+  if (data?.data) {
+    state = { ...DEFAULTS, ...data.data };
+  } else {
+    state = JSON.parse(JSON.stringify(DEFAULTS));
+  }
+}
+
+function fieldChange(key, value) {
+  state[key] = value;
+  scheduleSave();
+}
+
+function scheduleSave() {
+  setSyncDot('saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveData, 1200);
+}
+
+async function saveData() {
+  const { error } = await sb.from('vow_planner').upsert({ id: 1, data: state }, { onConflict: 'id' });
+  if (error) { setSyncDot('error'); showToast('Save failed — check connection'); }
+  else { setSyncDot('ok'); }
+}
+
+function setSyncDot(status) {
+  const d = document.getElementById('sync-dot');
+  d.className = 'sync-dot' + (status === 'saving' ? ' saving' : status === 'error' ? ' error' : '');
+  d.title = status === 'ok' ? 'All changes saved' : status === 'saving' ? 'Saving…' : 'Save error';
+}
+
+// ── TABS ──────────────────────────────────────────────────────────
+
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ── RENDER ALL ────────────────────────────────────────────────────
+
+function renderAll() {
+  // Overview fields
+  setVal('f-names', state.names);
+  setVal('f-guests', state.guests);
+  setVal('f-venue', state.venue);
+  setVal('f-time', state.ceremony_time);
+  setVal('f-officiant', state.officiant);
+  setVal('f-notes', state.overview_notes);
+  setVal('f-colors', state.colors);
+  setVal('f-vibe', state.vibe);
+  setVal('f-decor', state.decor);
+  setVal('f-total-budget', state.total_budget);
+  setVal('f-kids-names', state.kids_names);
+  setVal('f-kids-role', state.kids_role);
+  setVal('f-kids-detail', state.kids_detail);
+  setVal('f-s1', state.song_processional);
+  setVal('f-s2', state.song_ceremony);
+  setVal('f-s3', state.song_recessional);
+  setVal('f-s4', state.song_firstdance);
+  setVal('f-vows1', state.vows_1);
+  setVal('f-vows2', state.vows_2);
+  setVal('f-vow-notes', state.vow_notes);
+  renderBudget();
+  renderChecklist();
+  renderSchedule();
+  renderCeremony();
+  renderVendors();
+}
+
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el && val !== undefined && val !== null) el.value = val;
+}
+
+// ── BUDGET ────────────────────────────────────────────────────────
+
+function renderBudget() {
+  const el = document.getElementById('budget-rows');
+  el.innerHTML = '';
+  const rows = state.budget || [];
+  let totalAlloc = 0, totalSpent = 0;
+  const totalBudget = parseFloat(state.total_budget) || 10000;
+
+  rows.forEach((row, i) => {
+    const b = parseFloat(row.budget) || 0;
+    const s = parseFloat(row.spent) || 0;
+    const left = b - s;
+    totalAlloc += b;
+    totalSpent += s;
+
+    const d = document.createElement('div');
+    d.className = 'budget-row';
+    d.innerHTML = `
+      <span class="cat-name">${row.cat}</span>
+      <input type="number" value="${b}" oninput="state.budget[${i}].budget=parseFloat(this.value)||0; renderBudget(); scheduleSave();" style="text-align:right">
+      <input type="number" value="${s}" oninput="state.budget[${i}].spent=parseFloat(this.value)||0; renderBudget(); scheduleSave();" style="text-align:right">
+      <span class="variance ${left < 0 ? 'over' : 'ok'}">${left < 0 ? '-' : ''}$${Math.abs(left).toLocaleString()}</span>
+    `;
+    el.appendChild(d);
+  });
+
+  document.getElementById('total-alloc-display').textContent = '$' + totalAlloc.toLocaleString();
+  document.getElementById('total-spent-display').textContent = '$' + totalSpent.toLocaleString();
+  document.getElementById('bt-alloc').textContent = '$' + totalAlloc.toLocaleString();
+  document.getElementById('bt-spent').textContent = '$' + totalSpent.toLocaleString();
+  const left = totalBudget - totalSpent;
+  document.getElementById('bt-left').textContent = (left < 0 ? '-' : '') + '$' + Math.abs(left).toLocaleString();
+
+  const pct = Math.min(100, Math.round(totalSpent / totalBudget * 100));
+  const bar = document.getElementById('budget-bar');
+  bar.style.width = pct + '%';
+  bar.className = 'progress-bar' + (totalSpent > totalBudget ? ' over' : '');
+  document.getElementById('budget-label').textContent = pct + '% of budget spent · $' + left.toLocaleString() + ' remaining';
+  document.getElementById('stat-remaining').textContent = '$' + left.toLocaleString();
+}
+
+// ── CHECKLIST ─────────────────────────────────────────────────────
+
+function renderChecklist() {
+  const el = document.getElementById('checklist-body');
+  el.innerHTML = '';
+  let total = 0, done = 0;
+
+  CHECKLIST_PHASES.forEach((phase, pi) => {
+    const block = document.createElement('div');
+    block.className = 'card phase-block';
+    block.innerHTML = `<h3 style="display:flex;align-items:center;gap:8px">${phase.phase} <span class="badge ${phase.badge}">${phase.badge === 'now' ? 'Start now' : phase.badge === 'soon' ? 'Coming up' : 'Upcoming'}</span></h3>`;
+
+    phase.items.forEach((item, ii) => {
+      total++;
+      const key = `${pi}-${ii}`;
+      const checked = state.checked?.[key] || false;
+      if (checked) done++;
+
+      const row = document.createElement('div');
+      row.className = 'check-row';
+      const cid = `chk-${key}`;
+      row.innerHTML = `<input type="checkbox" id="${cid}" ${checked ? 'checked' : ''}><label for="${cid}" class="${checked ? 'done' : ''}">${item}</label>`;
+      row.querySelector('input').addEventListener('change', function() {
+        if (!state.checked) state.checked = {};
+        state.checked[key] = this.checked;
+        row.querySelector('label').className = this.checked ? 'done' : '';
+        scheduleSave();
+        updateChecklistStats();
+      });
+      block.appendChild(row);
+    });
+    el.appendChild(block);
+  });
+
+  updateChecklistStats();
+}
+
+function updateChecklistStats() {
+  let total = 0, done = 0;
+  CHECKLIST_PHASES.forEach((phase, pi) => {
+    phase.items.forEach((_, ii) => {
+      total++;
+      if (state.checked?.[`${pi}-${ii}`]) done++;
+    });
+  });
+  const pct = total ? Math.round(done / total * 100) : 0;
+  document.getElementById('cl-pct').textContent = pct + '%';
+  document.getElementById('cl-lbl').textContent = `${done} of ${total} tasks complete`;
+  document.getElementById('cl-bar').style.width = pct + '%';
+  document.getElementById('stat-progress').textContent = pct + '%';
+}
+
+// ── SCHEDULE ──────────────────────────────────────────────────────
+
+function renderSchedule() {
+  const el = document.getElementById('schedule-rows');
+  el.innerHTML = '';
+  (state.schedule || []).forEach((row, i) => {
+    const d = document.createElement('div');
+    d.className = 'sched-row';
+    d.innerHTML = `
+      <input type="text" value="${row.time}" placeholder="Time" oninput="state.schedule[${i}].time=this.value;scheduleSave()">
+      <input type="text" value="${row.event}" placeholder="Event" oninput="state.schedule[${i}].event=this.value;scheduleSave()">
+      <button class="btn-icon" onclick="state.schedule.splice(${i},1);renderSchedule();scheduleSave()">✕</button>
+    `;
+    el.appendChild(d);
+  });
+}
+
+function addScheduleRow() {
+  if (!state.schedule) state.schedule = [];
+  state.schedule.push({time:'', event:''});
+  renderSchedule();
+  scheduleSave();
+}
+
+// ── CEREMONY ──────────────────────────────────────────────────────
+
+function renderCeremony() {
+  const el = document.getElementById('ceremony-rows');
+  el.innerHTML = '';
+  (state.ceremony || []).forEach((step, i) => {
+    const d = document.createElement('div');
+    d.className = 'ceremony-row';
+    d.innerHTML = `
+      <span class="step-num">${i + 1}</span>
+      <input type="text" value="${step}" placeholder="Ceremony step" oninput="state.ceremony[${i}]=this.value;scheduleSave()">
+      <button class="btn-icon" onclick="state.ceremony.splice(${i},1);renderCeremony();scheduleSave()">✕</button>
+    `;
+    el.appendChild(d);
+  });
+}
+
+function addCeremonyRow() {
+  if (!state.ceremony) state.ceremony = [];
+  state.ceremony.push('');
+  renderCeremony();
+  scheduleSave();
+}
+
+// ── VENDORS ───────────────────────────────────────────────────────
+
+function renderVendors() {
+  const el = document.getElementById('vendor-rows');
+  el.innerHTML = '';
+  (state.vendors || []).forEach((v, i) => {
+    const d = document.createElement('div');
+    d.className = 'vendor-row';
+    d.innerHTML = `
+      <input type="text" value="${v.name||''}" placeholder="Vendor name" oninput="state.vendors[${i}].name=this.value;scheduleSave()">
+      <input type="text" value="${v.contact||''}" placeholder="Phone / website / notes" oninput="state.vendors[${i}].contact=this.value;scheduleSave()">
+      <select class="vendor-status" oninput="state.vendors[${i}].status=this.value;scheduleSave()">
+        ${['Not contacted','Contacted','Quoted','Booked','Confirmed'].map(s => `<option ${v.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <button class="btn-icon" onclick="state.vendors.splice(${i},1);renderVendors();scheduleSave()">✕</button>
+    `;
+    el.appendChild(d);
+  });
+}
+
+function addVendorRow() {
+  if (!state.vendors) state.vendors = [];
+  state.vendors.push({name:'', contact:'', status:'Not contacted'});
+  renderVendors();
+  scheduleSave();
+}
+
+// ── STATS ─────────────────────────────────────────────────────────
+
+function updateStats() {
+  const target = new Date('2026-11-15');
+  const days = Math.max(0, Math.ceil((target - new Date()) / 86400000));
+  document.getElementById('stat-days').textContent = days;
+  document.getElementById('stat-guests').textContent = state.guests || 30;
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Handle email magic link on return
+sb.auth.getSession().then(({ data: { session } }) => {
+  if (session) {
+    currentUser = session.user;
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('topbar-user').textContent = session.user.email;
+    loadData().then(() => { updateStats(); renderAll(); });
+  }
+});
+</script>
+</body>
+</html>
