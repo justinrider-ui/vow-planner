@@ -1,0 +1,491 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); }
+  .app { padding: 1.5rem 1rem; max-width: 680px; }
+  .header { text-align: center; padding: 1.5rem; border-bottom: 0.5px solid var(--color-border-tertiary); margin-bottom: 1.5rem; }
+  .header h1 { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+  .header p { font-size: 14px; color: var(--color-text-secondary); margin-top: 4px; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; border-bottom: 0.5px solid var(--color-border-tertiary); padding-bottom: 0; }
+  .tab { padding: 8px 14px; font-size: 14px; cursor: pointer; border: none; background: none; color: var(--color-text-secondary); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+  .tab.active { color: #6B2D3E; border-bottom-color: #6B2D3E; font-weight: 500; }
+  .tab:hover:not(.active) { color: var(--color-text-primary); }
+  .section { display: none; }
+  .section.active { display: block; }
+  .card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  .card h3 { font-size: 15px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .editable { width: 100%; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 8px 10px; font-size: 14px; color: var(--color-text-primary); background: var(--color-background-primary); font-family: var(--font-sans); }
+  .editable:focus { outline: none; border-color: #6B2D3E; box-shadow: 0 0 0 2px rgba(107,45,62,0.15); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .field { margin-bottom: 12px; }
+  .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1rem; }
+  .metric { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px; text-align: center; }
+  .metric .val { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+  .metric .lbl { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+  .budget-row { display: grid; grid-template-columns: 1fr 100px 130px; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .budget-row:last-child { border-bottom: none; }
+  .budget-row.total { font-weight: 500; border-top: 1px solid var(--color-border-secondary); padding-top: 12px; margin-top: 4px; }
+  .budget-row span { font-size: 14px; color: var(--color-text-secondary); }
+  .budget-row .cat { font-size: 14px; color: var(--color-text-primary); }
+  .amount-in { width: 100%; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 6px 8px; font-size: 14px; color: var(--color-text-primary); background: var(--color-background-primary); font-family: var(--font-sans); text-align: right; }
+  .amount-in:focus { outline: none; border-color: #6B2D3E; }
+  .bar-wrap { height: 8px; background: var(--color-background-secondary); border-radius: 4px; overflow: hidden; }
+  .bar { height: 100%; background: #6B2D3E; border-radius: 4px; transition: width 0.3s; }
+  .bar.over { background: #c0392b; }
+  .phase { margin-bottom: 1rem; }
+  .phase-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .phase-dot { width: 10px; height: 10px; border-radius: 50%; background: #6B2D3E; flex-shrink: 0; }
+  .phase-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+  .phase-date { font-size: 12px; color: var(--color-text-secondary); margin-left: auto; }
+  .check-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .check-item:last-child { border-bottom: none; }
+  .check-item input[type=checkbox] { margin-top: 2px; accent-color: #6B2D3E; flex-shrink: 0; width: 15px; height: 15px; cursor: pointer; }
+  .check-item label { font-size: 14px; color: var(--color-text-primary); cursor: pointer; line-height: 1.4; }
+  .check-item label.done { text-decoration: line-through; color: var(--color-text-secondary); }
+  .progress-summary { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+  .progress-text { font-size: 13px; color: var(--color-text-secondary); }
+  .progress-bar-wrap { flex: 1; height: 6px; background: var(--color-background-secondary); border-radius: 3px; overflow: hidden; }
+  .progress-bar { height: 100%; background: #6B2D3E; border-radius: 3px; transition: width 0.3s; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: var(--border-radius-md); font-weight: 500; }
+  .badge.soon { background: #FEF3CD; color: #7B5E0A; }
+  .badge.done { background: #D4EDDA; color: #1A5C2A; }
+  .badge.upcoming { background: var(--color-background-secondary); color: var(--color-text-secondary); }
+  .vow-textarea { width: 100%; min-height: 140px; resize: vertical; }
+  .ceremony-item { padding: 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); font-size: 14px; color: var(--color-text-primary); }
+  .ceremony-item:last-child { border-bottom: none; }
+  textarea.editable { resize: vertical; }
+  .save-btn { background: #6B2D3E; color: white; border: none; border-radius: var(--border-radius-md); padding: 8px 18px; font-size: 14px; cursor: pointer; font-family: var(--font-sans); margin-top: 8px; }
+  .save-btn:hover { background: #7d3548; }
+  .divider { height: 0.5px; background: var(--color-border-tertiary); margin: 1rem 0; }
+  .tip { font-size: 12px; color: var(--color-text-secondary); font-style: italic; margin-top: 6px; }
+  select.editable { cursor: pointer; }
+</style>
+
+<div class="app">
+  <div class="header">
+    <h1><i class="ti ti-heart" style="color:#6B2D3E; font-size:20px; margin-right:6px" aria-hidden="true"></i>Vow Renewal Planner</h1>
+    <p>November 15, 2026 &nbsp;·&nbsp; Moultonborough, NH &nbsp;·&nbsp; 13th Anniversary</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('overview')"><i class="ti ti-home" aria-hidden="true"></i> Overview</button>
+    <button class="tab" onclick="showTab('budget')"><i class="ti ti-currency-dollar" aria-hidden="true"></i> Budget</button>
+    <button class="tab" onclick="showTab('checklist')"><i class="ti ti-checkbox" aria-hidden="true"></i> Checklist</button>
+    <button class="tab" onclick="showTab('ceremony')"><i class="ti ti-sparkles" aria-hidden="true"></i> Ceremony</button>
+    <button class="tab" onclick="showTab('vows')"><i class="ti ti-writing" aria-hidden="true"></i> Vows</button>
+  </div>
+
+  <div id="tab-overview" class="section active">
+    <div class="metric-grid">
+      <div class="metric">
+        <div class="val" id="days-out">—</div>
+        <div class="lbl">days away</div>
+      </div>
+      <div class="metric">
+        <div class="val" id="budget-remaining">$10,000</div>
+        <div class="lbl">budget remaining</div>
+      </div>
+      <div class="metric">
+        <div class="val" id="tasks-done">0%</div>
+        <div class="lbl">tasks complete</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><i class="ti ti-info-circle" aria-hidden="true"></i> Event details</h3>
+      <div class="row2">
+        <div class="field">
+          <div class="label">Couple's names</div>
+          <input class="editable" id="couple-names" type="text" value="Your names" oninput="save()">
+        </div>
+        <div class="field">
+          <div class="label">Anniversary date</div>
+          <input class="editable" type="text" value="November 15, 2026" readonly style="color:var(--color-text-secondary)">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <div class="label">Guest count</div>
+          <input class="editable" id="guest-count" type="number" value="30" oninput="save()">
+        </div>
+        <div class="field">
+          <div class="label">Ceremony time</div>
+          <input class="editable" id="ceremony-time" type="text" value="4:00 PM" oninput="save()">
+        </div>
+      </div>
+      <div class="field">
+        <div class="label">Venue / address</div>
+        <input class="editable" id="venue" type="text" value="Our home — Moultonborough, NH" oninput="save()">
+      </div>
+      <div class="field">
+        <div class="label">Officiant</div>
+        <input class="editable" id="officiant" type="text" placeholder="Name of officiant or friend" oninput="save()">
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><i class="ti ti-clock" aria-hidden="true"></i> Day-of schedule</h3>
+      <div id="schedule-rows"></div>
+      <button class="save-btn" style="margin-top:12px; background:transparent; color:#6B2D3E; border:0.5px solid #6B2D3E;" onclick="addScheduleRow()"><i class="ti ti-plus"></i> Add row</button>
+    </div>
+  </div>
+
+  <div id="tab-budget" class="section">
+    <div class="card">
+      <h3><i class="ti ti-chart-pie" aria-hidden="true"></i> Budget tracker</h3>
+      <div class="row2" style="margin-bottom:16px">
+        <div>
+          <div class="label">Total budget</div>
+          <input class="editable" id="total-budget" type="number" value="10000" oninput="updateBudget()">
+        </div>
+        <div>
+          <div class="label">Spent so far</div>
+          <div style="font-size:22px; font-weight:500; padding-top:6px;" id="spent-display">$0</div>
+        </div>
+      </div>
+      <div class="bar-wrap" style="margin-bottom:6px"><div class="bar" id="budget-bar" style="width:0%"></div></div>
+      <div style="font-size:12px; color:var(--color-text-secondary);" id="budget-pct-label">0% of budget allocated</div>
+    </div>
+
+    <div class="card">
+      <h3><i class="ti ti-list" aria-hidden="true"></i> Line items</h3>
+      <div class="budget-row" style="font-weight:500; font-size:12px; color:var(--color-text-secondary); padding-bottom:6px;">
+        <span>Category</span><span style="text-align:right">Budget</span><span style="text-align:right">Spent</span>
+      </div>
+      <div id="budget-items"></div>
+      <div class="budget-row total" id="budget-total-row">
+        <span class="cat">Total</span>
+        <span id="total-allocated" style="text-align:right; font-size:14px;">$10,000</span>
+        <span id="total-spent" style="text-align:right; font-size:14px;">$0</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-checklist" class="section">
+    <div class="progress-summary">
+      <div class="progress-text" id="progress-text">0 of 0 tasks done</div>
+      <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+    </div>
+    <div id="checklist-sections"></div>
+  </div>
+
+  <div id="tab-ceremony" class="section">
+    <div class="card">
+      <h3><i class="ti ti-users" aria-hidden="true"></i> Kids' roles</h3>
+      <div class="field">
+        <div class="label">Kids' names</div>
+        <input class="editable" id="kids-names" type="text" placeholder="e.g. Emma, Liam" oninput="save()">
+      </div>
+      <div class="field">
+        <div class="label">Their role in the ceremony</div>
+        <textarea class="editable vow-textarea" id="kids-role" placeholder="e.g. Emma will be flower girl, Liam will carry the rings..." oninput="save()" style="min-height:80px"></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><i class="ti ti-timeline" aria-hidden="true"></i> Ceremony structure</h3>
+      <div id="ceremony-items"></div>
+      <button class="save-btn" style="margin-top:12px; background:transparent; color:#6B2D3E; border:0.5px solid #6B2D3E;" onclick="addCeremonyStep()"><i class="ti ti-plus"></i> Add step</button>
+    </div>
+
+    <div class="card">
+      <h3><i class="ti ti-music" aria-hidden="true"></i> Music notes</h3>
+      <div class="field">
+        <div class="label">Processional song</div>
+        <input class="editable" id="song-processional" type="text" placeholder="Song as you walk in..." oninput="save()">
+      </div>
+      <div class="field">
+        <div class="label">Ceremony music</div>
+        <input class="editable" id="song-ceremony" type="text" placeholder="Background during ceremony..." oninput="save()">
+      </div>
+      <div class="field">
+        <div class="label">Recessional song</div>
+        <input class="editable" id="song-recessional" type="text" placeholder="Song as you walk out..." oninput="save()">
+      </div>
+      <div class="field">
+        <div class="label">First dance song</div>
+        <input class="editable" id="song-firstdance" type="text" placeholder="Your first dance..." oninput="save()">
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><i class="ti ti-flame" aria-hidden="true"></i> Décor & atmosphere</h3>
+      <div class="field">
+        <div class="label">Color palette</div>
+        <input class="editable" id="decor-colors" type="text" value="Burgundy, gold, deep green" oninput="save()">
+      </div>
+      <div class="field">
+        <div class="label">Décor notes</div>
+        <textarea class="editable" id="decor-notes" placeholder="Flowers, lighting, centerpieces, bonfire..." oninput="save()" style="min-height:80px"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-vows" class="section">
+    <div class="card">
+      <h3><i class="ti ti-writing" aria-hidden="true"></i> Your vows</h3>
+      <p class="tip" style="margin-bottom:12px">Write from the heart. Think about your 13 years, what you've built, and what you promise going forward.</p>
+      <textarea class="editable vow-textarea" id="vows-person1" placeholder="Your vows here..." oninput="save()" style="min-height:180px"></textarea>
+    </div>
+    <div class="card">
+      <h3><i class="ti ti-writing" aria-hidden="true"></i> Partner's vows</h3>
+      <textarea class="editable vow-textarea" id="vows-person2" placeholder="Partner's vows here..." oninput="save()" style="min-height:180px"></textarea>
+    </div>
+    <div class="card">
+      <h3><i class="ti ti-note" aria-hidden="true"></i> Notes & inspiration</h3>
+      <textarea class="editable" id="vow-notes" placeholder="Memories, things you want to say, moments to reference..." oninput="save()" style="min-height:100px"></textarea>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULT = {
+  schedule: [
+    {time:"12:00 PM", event:"Tent & setup crew finishes — décor goes up"},
+    {time:"2:00 PM", event:"Get ready"},
+    {time:"3:30 PM", event:"Guests arrive — welcome drinks outside"},
+    {time:"4:00 PM", event:"Ceremony begins (outdoors, ~20 min)"},
+    {time:"4:30 PM", event:"Move to heated tent — cocktail hour"},
+    {time:"5:30 PM", event:"Dinner served"},
+    {time:"7:00 PM", event:"Toasts, cake, dancing / bonfire"},
+    {time:"9:00 PM", event:"Wind down, guests depart"}
+  ],
+  budget: [
+    {cat:"Catering & food", budget:4000, spent:0},
+    {cat:"Photography", budget:2000, spent:0},
+    {cat:"Tent & rentals", budget:1500, spent:0},
+    {cat:"Bar & drinks", budget:700, spent:0},
+    {cat:"Flowers & décor", budget:800, spent:0},
+    {cat:"Officiant", budget:300, spent:0},
+    {cat:"Music", budget:300, spent:0},
+    {cat:"Invitations & stationery", budget:150, spent:0},
+    {cat:"Cake / dessert", budget:150, spent:0},
+    {cat:"Buffer / misc", budget:100, spent:0}
+  ],
+  checklist: [
+    {phase:"Now – July", date:"By July 2026", badge:"soon", items:[
+      "Discuss vision together and align on priorities",
+      "Finalize guest list (~30 people)",
+      "Decide: full tent reception or indoor dinner after ceremony?",
+      "Identify officiant — ask a friend to get ordained or hire locally"
+    ]},
+    {phase:"July – August", date:"By Aug 2026", badge:"upcoming", items:[
+      "Get 2–3 tent rental quotes and book",
+      "Get 2–3 catering quotes and book",
+      "Book photographer (good ones fill up fast)",
+      "Confirm officiant is preparing",
+      "Reserve propane heaters"
+    ]},
+    {phase:"September – October", date:"By Oct 2026", badge:"upcoming", items:[
+      "Write your vows",
+      "Plan the kids' roles in the ceremony",
+      "Order or arrange flowers and décor",
+      "Choose attire (allow time for alterations)",
+      "Build ceremony + reception playlists",
+      "Send invitations (early October, 6–8 weeks out)",
+      "Consider ring upgrade or engraving"
+    ]},
+    {phase:"October – Early November", date:"By Nov 10", badge:"upcoming", items:[
+      "Confirm all vendors with final headcount",
+      "Finalize day-of timeline",
+      "Coordinate tent delivery (1–2 days before)",
+      "Arrange accommodation for out-of-town guests",
+      "Plan anniversary night or getaway",
+      "Rehearse ceremony once with the kids"
+    ]}
+  ],
+  ceremony: [
+    "Guests are seated, soft music playing",
+    "Kids walk in (flower role / ring bearer)",
+    "You walk in together or separately",
+    "Officiant welcomes everyone (2–3 min)",
+    "Readings or reflection on 13 years",
+    "Exchange of vows",
+    "Ring exchange",
+    "Unity moment (candle, sand, or family gesture)",
+    "Declaration & kiss",
+    "Introduce your family — walk back out together"
+  ]
+};
+
+let state = {};
+
+function load() {
+  try { state = JSON.parse(localStorage.getItem('vow_planner') || 'null') || JSON.parse(JSON.stringify(DEFAULT)); }
+  catch(e) { state = JSON.parse(JSON.stringify(DEFAULT)); }
+  if (!state.schedule) state.schedule = DEFAULT.schedule;
+  if (!state.budget) state.budget = DEFAULT.budget;
+  if (!state.checklist) state.checklist = DEFAULT.checklist;
+  if (!state.ceremony) state.ceremony = DEFAULT.ceremony;
+  if (!state.checked) state.checked = {};
+  if (!state.totalBudget) state.totalBudget = 10000;
+}
+
+function save() {
+  try { localStorage.setItem('vow_planner', JSON.stringify(state)); } catch(e){}
+  updateMetrics();
+}
+
+function showTab(t) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  event.target.closest('.tab').classList.add('active');
+}
+
+function updateMetrics() {
+  const target = new Date('2026-11-15');
+  const now = new Date();
+  const days = Math.max(0, Math.ceil((target - now) / 86400000));
+  document.getElementById('days-out').textContent = days;
+
+  const totalBudget = parseInt(document.getElementById('total-budget')?.value || state.totalBudget || 10000);
+  const spent = state.budget.reduce((a,b) => a + (parseFloat(b.spent)||0), 0);
+  const remaining = totalBudget - spent;
+  document.getElementById('budget-remaining').textContent = '$' + remaining.toLocaleString();
+
+  let total = 0, done = 0;
+  DEFAULT.checklist.forEach((ph,pi) => ph.items.forEach((_,ii) => { total++; if (state.checked[pi+'-'+ii]) done++; }));
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('tasks-done').textContent = pct + '%';
+}
+
+function renderSchedule() {
+  const el = document.getElementById('schedule-rows');
+  el.innerHTML = '';
+  (state.schedule||[]).forEach((row, i) => {
+    const d = document.createElement('div');
+    d.className = 'budget-row';
+    d.style.gridTemplateColumns = '110px 1fr 28px';
+    d.innerHTML = `<input class="amount-in" style="text-align:left" value="${row.time}" oninput="state.schedule[${i}].time=this.value;save()">
+      <input class="amount-in" style="text-align:left" value="${row.event}" oninput="state.schedule[${i}].event=this.value;save()">
+      <button onclick="state.schedule.splice(${i},1);renderSchedule();save()" style="background:none;border:none;cursor:pointer;color:var(--color-text-secondary);font-size:16px;padding:0 4px;"><i class="ti ti-x"></i></button>`;
+    el.appendChild(d);
+  });
+}
+
+function addScheduleRow() {
+  state.schedule.push({time:"", event:""});
+  renderSchedule(); save();
+}
+
+function renderBudget() {
+  const el = document.getElementById('budget-items');
+  el.innerHTML = '';
+  let totalAlloc = 0, totalSpent = 0;
+  (state.budget||[]).forEach((row, i) => {
+    totalAlloc += parseFloat(row.budget)||0;
+    totalSpent += parseFloat(row.spent)||0;
+    const d = document.createElement('div');
+    d.className = 'budget-row';
+    d.innerHTML = `<span class="cat">${row.cat}</span>
+      <input class="amount-in" value="${row.budget}" oninput="state.budget[${i}].budget=parseFloat(this.value)||0;updateBudget()">
+      <input class="amount-in" value="${row.spent}" oninput="state.budget[${i}].spent=parseFloat(this.value)||0;updateBudget()">`;
+    el.appendChild(d);
+  });
+  document.getElementById('total-allocated').textContent = '$'+totalAlloc.toLocaleString();
+  document.getElementById('total-spent').textContent = '$'+totalSpent.toLocaleString();
+  updateBudget();
+}
+
+function updateBudget() {
+  const totalBudget = parseInt(document.getElementById('total-budget')?.value || 10000);
+  state.totalBudget = totalBudget;
+  const spent = (state.budget||[]).reduce((a,b) => a + (parseFloat(b.spent)||0), 0);
+  const alloc = (state.budget||[]).reduce((a,b) => a + (parseFloat(b.budget)||0), 0);
+  const pct = Math.min(100, Math.round(spent/totalBudget*100));
+  const bar = document.getElementById('budget-bar');
+  bar.style.width = pct + '%';
+  bar.className = 'bar' + (spent > totalBudget ? ' over' : '');
+  document.getElementById('budget-pct-label').textContent = pct + '% of budget spent';
+  document.getElementById('spent-display').textContent = '$' + spent.toLocaleString();
+  document.getElementById('total-allocated').textContent = '$' + alloc.toLocaleString();
+  document.getElementById('total-spent').textContent = '$' + spent.toLocaleString();
+  save();
+}
+
+function renderChecklist() {
+  const el = document.getElementById('checklist-sections');
+  el.innerHTML = '';
+  let total = 0, done = 0;
+  DEFAULT.checklist.forEach((phase, pi) => {
+    const div = document.createElement('div');
+    div.className = 'card phase';
+    const badge = `<span class="badge ${phase.badge}">${phase.badge === 'soon' ? 'Coming up' : 'Upcoming'}</span>`;
+    div.innerHTML = `<h3><span class="phase-dot"></span>${phase.phase} <span style="margin-left:auto">${badge}</span></h3>`;
+    phase.items.forEach((item, ii) => {
+      total++;
+      const key = pi+'-'+ii;
+      const checked = state.checked[key];
+      if (checked) done++;
+      const row = document.createElement('div');
+      row.className = 'check-item';
+      row.innerHTML = `<input type="checkbox" id="chk-${key}" ${checked?'checked':''}><label for="chk-${key}" class="${checked?'done':''}">${item}</label>`;
+      row.querySelector('input').addEventListener('change', function() {
+        state.checked[key] = this.checked;
+        row.querySelector('label').className = this.checked ? 'done' : '';
+        save();
+        const d2 = Array.from(document.querySelectorAll('.check-item input:checked')).length;
+        const t2 = document.querySelectorAll('.check-item input').length;
+        document.getElementById('progress-text').textContent = d2+' of '+t2+' tasks done';
+        document.getElementById('progress-bar').style.width = Math.round(d2/t2*100)+'%';
+      });
+      div.appendChild(row);
+    });
+    el.appendChild(div);
+  });
+  document.getElementById('progress-text').textContent = done+' of '+total+' tasks done';
+  document.getElementById('progress-bar').style.width = Math.round(done/total*100)+'%';
+}
+
+function renderCeremony() {
+  const el = document.getElementById('ceremony-items');
+  el.innerHTML = '';
+  (state.ceremony||[]).forEach((step, i) => {
+    const d = document.createElement('div');
+    d.className = 'budget-row';
+    d.style.gridTemplateColumns = '28px 1fr 28px';
+    d.innerHTML = `<span style="font-size:13px;color:var(--color-text-secondary);font-weight:500">${i+1}.</span>
+      <input class="amount-in" style="text-align:left" value="${step}" oninput="state.ceremony[${i}]=this.value;save()">
+      <button onclick="state.ceremony.splice(${i},1);renderCeremony();save()" style="background:none;border:none;cursor:pointer;color:var(--color-text-secondary);font-size:16px;padding:0 4px;"><i class="ti ti-x"></i></button>`;
+    el.appendChild(d);
+  });
+}
+
+function addCeremonyStep() {
+  state.ceremony.push("");
+  renderCeremony(); save();
+}
+
+function bindField(id, key) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = state[key] || '';
+  el.addEventListener('input', () => { state[key] = el.value; save(); });
+}
+
+load();
+renderSchedule();
+renderBudget();
+renderChecklist();
+renderCeremony();
+bindField('couple-names','coupleNames');
+bindField('guest-count','guestCount');
+bindField('ceremony-time','ceremonyTime');
+bindField('venue','venue');
+bindField('officiant','officiant');
+bindField('kids-names','kidsNames');
+bindField('kids-role','kidsRole');
+bindField('song-processional','songProcessional');
+bindField('song-ceremony','songCeremony');
+bindField('song-recessional','songRecessional');
+bindField('song-firstdance','songFirstDance');
+bindField('decor-colors','decorColors');
+bindField('decor-notes','decorNotes');
+bindField('vows-person1','vowsPerson1');
+bindField('vows-person2','vowsPerson2');
+bindField('vow-notes','vowNotes');
+updateMetrics();
+</script>
