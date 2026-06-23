@@ -75,20 +75,22 @@
     line-height: 1.5;
   }
 
-  .auth-card input[type=email] {
+  .auth-card input[type=password] {
     width: 100%;
     padding: 12px 16px;
     border: 1px solid var(--border-strong);
     border-radius: 8px;
-    font-size: 1rem;
+    font-size: 1.4rem;
     font-family: 'Arial', sans-serif;
     background: var(--cream);
     color: var(--text);
     margin-bottom: 12px;
     transition: border-color 0.2s;
+    text-align: center;
+    letter-spacing: 0.3em;
   }
 
-  .auth-card input[type=email]:focus {
+  .auth-card input[type=password]:focus {
     outline: none;
     border-color: var(--burgundy);
   }
@@ -609,9 +611,9 @@
   <div class="auth-card">
     <span class="heart">♥</span>
     <h1>Vow Renewal Planner</h1>
-    <p>November 15, 2026 · Moultonborough, NH<br>Enter your email and we'll send you a magic link.</p>
-    <input type="email" id="auth-email" placeholder="your@email.com" />
-    <button class="btn-primary" id="auth-btn" onclick="sendMagicLink()">Send magic link</button>
+    <p>November 15, 2026 · Moultonborough, NH<br>Enter your code to get started.</p>
+    <input type="password" id="auth-code" placeholder="Enter code" maxlength="10" onkeydown="if(event.key==='Enter')checkCode()" />
+    <button class="btn-primary" id="auth-btn" onclick="checkCode()">Sign in</button>
     <div class="auth-msg" id="auth-msg"></div>
   </div>
 </div>
@@ -939,45 +941,32 @@ const CHECKLIST_PHASES = [
 
 // ── AUTH ──────────────────────────────────────────────────────────
 
-async function sendMagicLink() {
-  const email = document.getElementById('auth-email').value.trim();
-  if (!email) return;
-  const btn = document.getElementById('auth-btn');
-  btn.disabled = true;
-  btn.textContent = 'Sending…';
-  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: 'https://justinrider-ui.github.io/vow-planner/' } });
+const ACCESS_CODE = '062119';
+
+function checkCode() {
+  const code = document.getElementById('auth-code').value.trim();
   const msg = document.getElementById('auth-msg');
-  if (error) {
-    msg.className = 'auth-msg error';
-    msg.textContent = error.message;
-    btn.disabled = false;
-    btn.textContent = 'Send magic link';
+  if (code === ACCESS_CODE) {
+    sessionStorage.setItem('vow_auth', 'true');
+    enterApp();
   } else {
-    msg.className = 'auth-msg success';
-    msg.textContent = 'Check your email — click the link to sign in. You can close this tab.';
-    btn.textContent = 'Sent ✓';
+    msg.className = 'auth-msg error';
+    msg.textContent = 'Incorrect code. Try again.';
+    document.getElementById('auth-code').value = '';
   }
 }
 
-async function signOut() {
-  await sb.auth.signOut();
+function signOut() {
+  sessionStorage.removeItem('vow_auth');
   location.reload();
 }
 
-sb.auth.onAuthStateChange(async (event, session) => {
-  if (session?.user) {
-    currentUser = session.user;
-    document.getElementById('auth-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    document.getElementById('topbar-user').textContent = session.user.email;
-    await loadData();
-    updateStats();
-    renderAll();
-  } else {
-    document.getElementById('auth-screen').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
-  }
-});
+function enterApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('topbar-user').textContent = '';
+  loadData().then(() => { updateStats(); renderAll(); });
+}
 
 // ── DATA ──────────────────────────────────────────────────────────
 
@@ -1245,16 +1234,10 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// Handle email magic link on return
-sb.auth.getSession().then(({ data: { session } }) => {
-  if (session) {
-    currentUser = session.user;
-    document.getElementById('auth-screen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    document.getElementById('topbar-user').textContent = session.user.email;
-    loadData().then(() => { updateStats(); renderAll(); });
-  }
-});
+// Auto-login if already authenticated this session
+if (sessionStorage.getItem('vow_auth') === 'true') {
+  enterApp();
+}
 </script>
 </body>
 </html>
