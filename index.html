@@ -945,7 +945,7 @@ async function sendMagicLink() {
   const btn = document.getElementById('auth-btn');
   btn.disabled = true;
   btn.textContent = 'Sending…';
-  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } });
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: 'https://justinrider-ui.github.io/vow-planner/' } });
   const msg = document.getElementById('auth-msg');
   if (error) {
     msg.className = 'auth-msg error';
